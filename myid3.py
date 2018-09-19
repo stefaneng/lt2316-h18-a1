@@ -1,4 +1,7 @@
 # Module file for implementation of ID3 algorithm.
+import pandas as pd
+import numpy as np
+from helper import *
 
 # You can add optional keyword parameters to anything, but the original
 # interface must work with the original test file.
@@ -31,7 +34,10 @@ class DecisionTree:
         #
         # Another bonus question is continuously-valued data. If you try this
         # you will need to modify predict and test.
-        pass
+        i = 0
+        for col in X:
+            df = pd.concat([X, y], axis = 1)
+            print(col, "has IG =", info_gain_df(df, col, 'class'))
 
     def predict(self, instance):
         # Returns the class of a given instance.
