@@ -17,7 +17,6 @@ def info_gain_df(df, target_col, y_name):
     #if y is not None:
     #    df_y = pd.concat([df, y], axis=1)
 
-
     n = len(df)
     # First compute the entropy for y attribute
     y_probs = df.groupby([y_name]).size().div(n)

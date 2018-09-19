@@ -2,6 +2,7 @@
 import pandas as pd
 import numpy as np
 from helper import *
+from tree import Node
 
 # You can add optional keyword parameters to anything, but the original
 # interface must work with the original test file.
@@ -18,9 +19,46 @@ class DecisionTree:
         # If load_from isn't None, then it should be a file *object*,
         # not necessarily a name. (For example, it has been created with
         # open().)
+        self.model = None
         print("Initializing classifier.")
         if load_from is not None:
             print("Loading from file object.")
+
+    def _id3(self, X, attrs, target_attr):
+        # All positive or all negative examples
+        root = Node()
+        if len(X.groupby(target_attr)) == 1:
+            # Return single-node tree Root with label = first values in X[target_attr]
+            if len(X[target_attr]) > 0:
+                root.label = X[target_attr].iloc[0]
+            return root
+        if len(attrs) <= 0:
+            # label = most common value of the target attribute in the examples.
+            label = X[target_attr].groupby('class').size().idxmax()
+            return root
+
+        # Compute the maximum information gain attribute
+        ig_max = 0
+        max_attr = None
+        for a in attrs:
+            ig = info_gain_df(X, a, 'class')
+            if ig > ig_max:
+                ig_max = ig
+                max_attr = a
+        root.attr = max_attr
+
+        # Compute all the possible values for the attribute
+        for u in X[max_attr].unique():
+
+            # Set each of the children to the results from
+            # _id3 on
+            # X[max_attr == u] as the data frame
+            # Remove the current attribute from the array
+            new_attrs = attrs.copy()
+            new_attrs.remove(max_attr)
+
+            root.children[u] = self._id3(X[X[max_attr] == u], new_attrs, 'class')
+        return root
 
     def train(self, X, y, attrs, prune=False):
         # Doesn't return anything but rather trains a model via ID3
@@ -34,10 +72,11 @@ class DecisionTree:
         #
         # Another bonus question is continuously-valued data. If you try this
         # you will need to modify predict and test.
-        i = 0
-        for col in X:
-            df = pd.concat([X, y], axis = 1)
-            print(col, "has IG =", info_gain_df(df, col, 'class'))
+        joined_df = pd.concat([X, y], axis=1)
+        # Make sure that y is labeled as 'class'
+        joined_df.columns = attrs + ['class']
+        model = self._id3(joined_df, attrs, 'class')
+        self.model = model
 
     def predict(self, instance):
         # Returns the class of a given instance.
@@ -61,7 +100,7 @@ class DecisionTree:
     def __str__(self):
         # Returns a readable string representation of the trained
         # decision tree or "ID3 untrained" if the model is not trained.
-        return "ID3 untrained"
+        return str(self.model)
 
     def save(self, output):
         # 'output' is a file *object* (NOT necessarily a filename)
