@@ -24,9 +24,10 @@ class DecisionTree:
         if load_from is not None:
             print("Loading from file object.")
 
-    def _id3(self, X, attrs, target_attr):
+    def _id3(self, X, attrs, target_attr, depth = 1):
         # All positive or all negative examples
         root = Node()
+        root.depth = depth
         if len(X.groupby(target_attr)) == 1:
             # Return single-node tree Root with label = first values in X[target_attr]
             if len(X[target_attr]) > 0:
@@ -34,18 +35,18 @@ class DecisionTree:
             return root
         if len(attrs) <= 0:
             # label = most common value of the target attribute in the examples.
-            label = X[target_attr].groupby('class').size().idxmax()
+            label = X[target_attr].value_counts().idxmax()
             return root
 
         # Compute the maximum information gain attribute
         ig_max = 0
         max_attr = None
         for a in attrs:
-            ig = info_gain_df(X, a, 'class')
+            ig = info_gain_df(X, a, target_attr)
             if ig > ig_max:
                 ig_max = ig
                 max_attr = a
-        root.attr = max_attr
+        root.child_attr = max_attr
 
         # Compute all the possible values for the attribute
         for u in X[max_attr].unique():
@@ -54,10 +55,12 @@ class DecisionTree:
             # _id3 on
             # X[max_attr == u] as the data frame
             # Remove the current attribute from the array
-            new_attrs = attrs.copy()
+            new_attrs = list(attrs.copy())
             new_attrs.remove(max_attr)
 
-            root.children[u] = self._id3(X[X[max_attr] == u], new_attrs, 'class')
+            root.children[u] = self._id3(X[X[max_attr] == u], new_attrs, target_attr, depth+1)
+            root.children[u].value = u
+            root.children[u].attr = max_attr
         return root
 
     def train(self, X, y, attrs, prune=False):
@@ -73,9 +76,7 @@ class DecisionTree:
         # Another bonus question is continuously-valued data. If you try this
         # you will need to modify predict and test.
         joined_df = pd.concat([X, y], axis=1)
-        # Make sure that y is labeled as 'class'
-        joined_df.columns = attrs + ['class']
-        model = self._id3(joined_df, attrs, 'class')
+        model = self._id3(joined_df, attrs, y.name)
         self.model = model
 
     def predict(self, instance):
