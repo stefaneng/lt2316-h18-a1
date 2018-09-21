@@ -24,7 +24,15 @@ class DecisionTree:
         if load_from is not None:
             print("Loading from file object.")
 
-    def _id3(self, X, attrs, target_attr, depth = 1):
+    def _id3(self, X, attrs, target_attr, unique_values, depth = 1):
+        """
+        Takes in a dataframe (or subset) `X`
+        that we want to split on one of `attrs`
+        Target variable (class) we want to predict is in `target_attr`
+        `unique_values` is a dictionary (attribute, list of unique values for attriute)
+            Not sure if this is the best way to do it, but this will ensure that we add
+            each value we see in the training set to every branch.
+        """
         # All positive or all negative examples
         root = Node()
         root.depth = depth
@@ -39,7 +47,7 @@ class DecisionTree:
             return root
 
         # Compute the maximum information gain attribute
-        ig_max = 0
+        ig_max = -1
         max_attr = None
         for a in attrs:
             ig = info_gain_df(X, a, target_attr)
@@ -49,16 +57,23 @@ class DecisionTree:
         root.child_attr = max_attr
 
         # Compute all the possible values for the attribute
-        for u in X[max_attr].unique():
-
+        for u in unique_values[max_attr]:
             # Set each of the children to the results from
             # _id3 on
             # X[max_attr == u] as the data frame
             # Remove the current attribute from the array
             new_attrs = list(attrs.copy())
             new_attrs.remove(max_attr)
+            examples = X[X[max_attr] == u]
+            root.children[u] = Node()
+            if len(examples) <= 0:
+                # Add a leaf node with label = most common target value in the examples
+                root.children[u].label = X[target_attr].value_counts().idxmax()
 
-            root.children[u] = self._id3(X[X[max_attr] == u], new_attrs, target_attr, depth+1)
+            else:
+                root.children[u] = self._id3(examples, new_attrs, target_attr, unique_values, depth+1)
+
+            # Set properties common to both cases
             root.children[u].value = u
             root.children[u].attr = max_attr
         return root
@@ -76,13 +91,26 @@ class DecisionTree:
         # Another bonus question is continuously-valued data. If you try this
         # you will need to modify predict and test.
         joined_df = pd.concat([X, y], axis=1)
-        model = self._id3(joined_df, attrs, y.name)
+        # Compute the possible values for each attribute
+        # Store in dictionary
+        unique_values = {a: joined_df[a].unique() for a in joined_df}
+        model = self._id3(joined_df, attrs, y.name, unique_values)
         self.model = model
+
+    def _predict_one(self, instance):
+        "Returns the class of a single given instance."
+        current_node = self.model
+        while not current_node.label:
+            val = instance[current_node.child_attr]
+            current_node = current_node.children[val]
+        return current_node.label
 
     def predict(self, instance):
         # Returns the class of a given instance.
         # Raise a ValueError if the class is not trained.
-        pass
+        if not self.model:
+            raise ValueError("Model is not trained.")
+        return instance.apply(self._predict_one, axis=1)
 
     def test(self, X, y, display=False):
         # Returns a dictionary containing test statistics:

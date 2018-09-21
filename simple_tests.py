@@ -18,3 +18,10 @@ cols = X.columns.values
 dt = DecisionTree()
 dt.train(X, y, cols)
 print(dt.model)
+
+pred = pd.read_csv(StringIO("""cheese sauce spicy vegetables
+mozza hllnds yes no
+jarls hllnds yes no"""), sep=" ")
+
+#print(pred)
+print(dt.predict(pred))
