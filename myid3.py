@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 from helper import *
 from tree import Node
+from sklearn.metrics import confusion_matrix, classification_report
 
 # You can add optional keyword parameters to anything, but the original
 # interface must work with the original test file.
@@ -128,6 +129,21 @@ class DecisionTree:
             conf_mat[pred][actual] += 1
         return conf_mat
 
+    def _measures(self, confusion_matrix):
+        true_pos = np.diag(confusion_matrix).sum()
+        false_pos = confusion_matrix.apply(lambda col: col.sum() - col[col.name], axis=0)
+        false_neg = confusion_matrix.apply(lambda row: row.sum() - row[row.name], axis=1)
+        count = confusion_matrix.values.sum()
+        precision = true_pos / (true_pos + false_pos)
+        recall = true_pos / (true_pos + false_neg)
+        f1 = 2 * precision * recall / (precision + recall)
+        return {
+        'accuracy': true_pos / count,
+        'precision': precision,
+        'recall': recall,
+        'F1': f1
+        }
+
     def test(self, X, y, display=False):
         # Returns a dictionary containing test statistics:
         # accuracy, recall, precision, F1-measure, and a confusion matrix.
@@ -141,8 +157,12 @@ class DecisionTree:
                   'confusion-matrix':None}
         preds = self.predict(X)
         result['confusion-matrix'] = self._confusion_matrix(preds, y)
+        result.update(self._measures(result['confusion-matrix']))
         if display:
             print(result)
+            print("sklearn implementation:", classification_report(y, preds, target_names=result['confusion-matrix'].columns.values))
+            print("sklearn implementation:", confusion_matrix(y, preds))
+
         return result
 
     def __str__(self):
