@@ -110,18 +110,37 @@ class DecisionTree:
         # Raise a ValueError if the class is not trained.
         if not self.model:
             raise ValueError("Model is not trained.")
-        return instance.apply(self._predict_one, axis=1)
+        preds = instance.apply(self._predict_one, axis=1)
+        preds.name = "prediction"
+        return preds
+
+    def _confusion_matrix(self, predicted, actual):
+        actual_classes = set(predicted)
+        predicted_classes = set(actual)
+        # Combine the possible classes in both y and predicted
+        classes = actual_classes.union(predicted_classes)
+        n = len(classes)
+        conf_mat = pd.DataFrame(np.zeros((n, n)))
+        conf_mat.columns = classes
+        conf_mat.index = classes
+
+        for (pred, actual) in zip(predicted, actual):
+            conf_mat[pred][actual] += 1
+        return conf_mat
 
     def test(self, X, y, display=False):
         # Returns a dictionary containing test statistics:
         # accuracy, recall, precision, F1-measure, and a confusion matrix.
         # If display=True, print the information to the console.
         # Raise a ValueError if the class is not trained.
+
         result = {'precision':None,
                   'recall':None,
                   'accuracy':None,
                   'F1':None,
                   'confusion-matrix':None}
+        preds = self.predict(X)
+        result['confusion-matrix'] = self._confusion_matrix(preds, y)
         if display:
             print(result)
         return result

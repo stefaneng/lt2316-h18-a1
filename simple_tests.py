@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 from io import StringIO
 from myid3 import DecisionTree
 
@@ -24,4 +25,5 @@ mozza hllnds yes no
 jarls hllnds yes no"""), sep=" ")
 
 #print(pred)
-print(dt.predict(pred))
+print(pd.concat([pred, dt.predict(pred)], axis=1))
+dt.test(pred, np.array(["no", "no"]), display=True)
