@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 from helper import *
 from tree import Node
+import pickle
 from sklearn.metrics import confusion_matrix, classification_report
 
 # You can add optional keyword parameters to anything, but the original
@@ -24,6 +25,7 @@ class DecisionTree:
         print("Initializing classifier.")
         if load_from is not None:
             print("Loading from file object.")
+            self.model = pickle.load(load_from)
 
     def _id3(self, X, attrs, target_attr, unique_values, depth = 1):
         """
@@ -174,4 +176,4 @@ class DecisionTree:
         # 'output' is a file *object* (NOT necessarily a filename)
         # to which you will save the model in a manner that it can be
         # loaded into a new DecisionTree instance.
-        pass
+        pickle.dump(self.model, output)
