@@ -4,7 +4,7 @@ import numpy as np
 from helper import *
 from tree import Node
 import pickle
-from sklearn.metrics import confusion_matrix, classification_report
+# from sklearn.metrics import confusion_matrix, classification_report
 
 # You can add optional keyword parameters to anything, but the original
 # interface must work with the original test file.
@@ -132,18 +132,25 @@ class DecisionTree:
         return conf_mat
 
     def _measures(self, confusion_matrix):
-        true_pos = np.diag(confusion_matrix).sum()
+        true_pos = np.diag(confusion_matrix)
         false_pos = confusion_matrix.apply(lambda col: col.sum() - col[col.name], axis=0)
         false_neg = confusion_matrix.apply(lambda row: row.sum() - row[row.name], axis=1)
         count = confusion_matrix.values.sum()
         precision = true_pos / (true_pos + false_pos)
+        # If we have no predicted values returns NaN (true positives + false positives = 0)
+        #
+        if sum(np.isnan(precision)) > 0:
+            print("Precision and F-score are ill-defined and set to nan in labels with no predicted samples.")
         recall = true_pos / (true_pos + false_neg)
+        if sum(np.isnan(recall)) > 0:
+            print("Recall and F-score are ill-defined and being set to nan in labels with no predicted samples.")
+        accuracy = true_pos.sum() / count
         f1 = 2 * precision * recall / (precision + recall)
         return {
-        'accuracy': true_pos / count,
-        'precision': precision,
-        'recall': recall,
-        'F1': f1
+        'accuracy': accuracy,
+        'precision': precision.to_dict(),
+        'recall': recall.to_dict(),
+        'F1': f1.to_dict()
         }
 
     def test(self, X, y, display=False):
@@ -159,11 +166,13 @@ class DecisionTree:
                   'confusion-matrix':None}
         preds = self.predict(X)
         result['confusion-matrix'] = self._confusion_matrix(preds, y)
+        # Add accuracy, recall and precision and update the result
         result.update(self._measures(result['confusion-matrix']))
         if display:
             print(result)
-            print("sklearn implementation:", classification_report(y, preds, target_names=result['confusion-matrix'].columns.values))
-            print("sklearn implementation:", confusion_matrix(y, preds))
+            # TODO: Remove this
+            #print("sklearn implementation:", classification_report(y, preds, target_names=result['confusion-matrix'].columns.values))
+            #print("sklearn implementation:", confusion_matrix(y, preds))
 
         return result
 
