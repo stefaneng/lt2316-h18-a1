@@ -133,15 +133,14 @@ class DecisionTree:
 
     def _measures(self, confusion_matrix):
         true_pos = np.diag(confusion_matrix)
-        false_pos = confusion_matrix.apply(lambda col: col.sum() - col[col.name], axis=0)
-        false_neg = confusion_matrix.apply(lambda row: row.sum() - row[row.name], axis=1)
         count = confusion_matrix.values.sum()
-        precision = true_pos / (true_pos + false_pos)
+        # Precision is the # we got correct, over the amount predicted (sum cols)
+        precision = true_pos / confusion_matrix.sum(axis=0)
         # If we have no predicted values returns NaN (true positives + false positives = 0)
-        #
         if sum(np.isnan(precision)) > 0:
             print("Precision and F-score are ill-defined and set to nan in labels with no predicted samples.")
-        recall = true_pos / (true_pos + false_neg)
+        # Recall is the # we got correct, over the actual values for that attribute (sum rows)
+        recall = true_pos / confusion_matrix.sum(axis=1)
         if sum(np.isnan(recall)) > 0:
             print("Recall and F-score are ill-defined and being set to nan in labels with no predicted samples.")
         accuracy = true_pos.sum() / count
