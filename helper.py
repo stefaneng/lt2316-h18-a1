@@ -8,6 +8,23 @@ def compute_prob(df_col, y):
 def entropy(probs):
     return - sum(probs * np.log2(probs))
 
+def binary_split_cont(X, attr, target_attr):
+    sorted_df = X.sort_values(by=[attr])
+    max_gain = -np.inf
+    max_midpoint = None
+    max_col = None
+    for i in range(len(sorted_df[attr]) - 1):
+        midpoint = (sorted_df[attr].iloc[i + 1] + sorted_df[attr].iloc[i]) / 2
+        col_name = attr + '_' + str(i)
+        sorted_df[col_name] = sorted_df[attr] <= midpoint
+        ig = info_gain_df(sorted_df, col_name, target_attr)
+        if ig > max_gain:
+            max_gain = ig
+            max_midpoint = midpoint
+            max_col = col_name
+
+    return (max_gain, max_midpoint, sorted_df[max_col])
+
 def info_gain_df(df, target_col, y_name):
     """
     Compute the information gain IG(`y_name`, `target_col`) = H(`y_name`) - H(`y_name` | `target_col`)

@@ -6,6 +6,8 @@ class Node:
         self.attr = None
         self.children = {}
         self.depth = 0
+        self.continuous = False
+        self.split_value = None
 
     def add_child(self, node, value):
         "Adds a child with the value of the label"

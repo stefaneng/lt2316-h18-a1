@@ -52,21 +52,39 @@ class DecisionTree:
         # Compute the maximum information gain attribute
         ig_max = -1
         max_attr = None
+        col_midpoint = {}
+        new_attrs = list(attrs.copy())
         for a in attrs:
+            # Continuous data
+            if X[a].dtype == 'float64':
+                print("continuous column", a)
+                # Convert attribute to binary split with best information gain
+                (max_gain, max_midpoint, max_col) = binary_split_cont(X, a, target_attr)
+                col_name = a + "_split"
+                X[col_name] = max_col
+                col_midpoint[col_name] = max_midpoint
+                # Update the unique values object with new column info
+                unique_values[col_name] = X[col_name].unique()
+                new_attrs.remove(a)
+                new_attrs.append(col_name)
+                a = col_name
             ig = info_gain_df(X, a, target_attr)
             if ig > ig_max:
                 ig_max = ig
                 max_attr = a
-        root.child_attr = max_attr
+        # Remove _split from column name
+        if max_attr in col_midpoint:
+            root.child_attr = max_attr[:-6]
+        else:
+            root.child_attr = max_attr
 
+        new_attrs.remove(max_attr)
         # Compute all the possible values for the attribute
         for u in unique_values[max_attr]:
             # Set each of the children to the results from
             # _id3 on
             # X[max_attr == u] as the data frame
             # Remove the current attribute from the array
-            new_attrs = list(attrs.copy())
-            new_attrs.remove(max_attr)
             examples = X[X[max_attr] == u]
             root.children[u] = Node()
             if len(examples) <= 0:
@@ -79,6 +97,18 @@ class DecisionTree:
             # Set properties common to both cases
             root.children[u].value = u
             root.children[u].attr = max_attr
+            # We have a continuous variable
+            if max_attr in col_midpoint:
+                root.children[u].continuous = True
+                # Ugly way to remove the _split (6 characters) that we added to end of name
+                root.children[u].attr = max_attr[:-6]
+                # True example, the value is less than or equal to midpoint
+                if u:
+                    root.children[u].value = "x <= {}".format(col_midpoint[max_attr])
+                # Example is > midpoint
+                else:
+                    root.children[u].value = "x > {}".format(col_midpoint[max_attr])
+
         return root
 
     def train(self, X, y, attrs, prune=False):
