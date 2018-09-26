@@ -9,15 +9,23 @@ def entropy(probs):
     return - sum(probs * np.log2(probs))
 
 def binary_split_cont(X, attr, target_attr):
+    """Takes a data frame `X`, with a continuous attribute `attr`
+    Creates a binary split in the data by calculating the information gain
+    when splitting the data between each point
+    """
     sorted_df = X.sort_values(by=[attr])
     max_gain = -np.inf
     max_midpoint = None
     max_col = None
     for i in range(len(sorted_df[attr]) - 1):
+        # Compute the midpoint between each of the sorted values
         midpoint = (sorted_df[attr].iloc[i + 1] + sorted_df[attr].iloc[i]) / 2
         col_name = attr + '_' + str(i)
+        # Split the data into <= midpoint and > midpoint
         sorted_df[col_name] = sorted_df[attr] <= midpoint
+        # Compute the information gain with this split
         ig = info_gain_df(sorted_df, col_name, target_attr)
+        # Calculate the max characteristics
         if ig > max_gain:
             max_gain = ig
             max_midpoint = midpoint
