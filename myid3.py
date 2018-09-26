@@ -46,7 +46,8 @@ class DecisionTree:
             return root
         if len(attrs) <= 0:
             # label = most common value of the target attribute in the examples.
-            label = X[target_attr].value_counts().idxmax()
+            root.label = X[target_attr].value_counts().idxmax()
+            print("Get max category!", root)
             return root
 
         # Compute the maximum information gain attribute
@@ -57,7 +58,6 @@ class DecisionTree:
         for a in attrs:
             # Continuous data
             if X[a].dtype == 'float64':
-                print("continuous column", a)
                 # Convert attribute to binary split with best information gain
                 (max_gain, max_midpoint, max_col) = binary_split_cont(X, a, target_attr)
                 col_name = a + "_split"
@@ -74,7 +74,9 @@ class DecisionTree:
                 max_attr = a
         # Remove _split from column name
         if max_attr in col_midpoint:
+            root.child_split = col_midpoint[max_attr]
             root.child_attr = max_attr[:-6]
+            root.continuous_child = True
         else:
             root.child_attr = max_attr
 
@@ -99,15 +101,9 @@ class DecisionTree:
             root.children[u].attr = max_attr
             # We have a continuous variable
             if max_attr in col_midpoint:
-                root.children[u].continuous = True
+                root.children[u].split_value = col_midpoint[max_attr]
                 # Ugly way to remove the _split (6 characters) that we added to end of name
                 root.children[u].attr = max_attr[:-6]
-                # True example, the value is less than or equal to midpoint
-                if u:
-                    root.children[u].value = "x <= {}".format(col_midpoint[max_attr])
-                # Example is > midpoint
-                else:
-                    root.children[u].value = "x > {}".format(col_midpoint[max_attr])
 
         return root
 
@@ -134,7 +130,11 @@ class DecisionTree:
         "Returns the class of a single given instance."
         current_node = self.model
         while not current_node.label:
-            val = instance[current_node.child_attr]
+            if current_node.continuous_child:
+                # Need to put split value into parent, not child
+                val = instance[current_node.child_attr] <= current_node.child_split
+            else:
+                val = instance[current_node.child_attr]
             current_node = current_node.children[val]
         return current_node.label
 

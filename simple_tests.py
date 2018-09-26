@@ -55,3 +55,13 @@ cols = X.columns.values
 dt = DecisionTree()
 dt.train(X, y, cols)
 print(dt.model)
+
+pred_cont = pd.read_csv(StringIO("""Outlook Temperature Playball
+Rain 13.5 Yes
+Sunny 30 No
+Sunny 15.0 No
+Rain 19.5 No"""), sep=" ")
+
+print(pd.concat([pred_cont, dt.predict(pred_cont)], axis=1))
+#dt.predict(pred_cont)
+dt.test(pred_cont, pred_cont["Playball"], display=True)
