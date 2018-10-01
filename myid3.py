@@ -4,7 +4,6 @@ import numpy as np
 from helper import *
 from tree import Node
 import pickle
-# from sklearn.metrics import confusion_matrix, classification_report
 
 # You can add optional keyword parameters to anything, but the original
 # interface must work with the original test file.
@@ -60,6 +59,7 @@ class DecisionTree:
             if X[a].dtype == 'float64':
                 # Convert attribute to binary split with best information gain
                 (max_gain, max_midpoint, max_col) = binary_split_cont(X, a, target_attr)
+                # Rename the now binary column with _split appended to name
                 col_name = a + "_split"
                 X[col_name] = max_col
                 col_midpoint[col_name] = max_midpoint
@@ -176,10 +176,10 @@ class DecisionTree:
         accuracy = true_pos.sum() / count
         f1 = 2 * precision * recall / (precision + recall)
         return {
-        'accuracy': accuracy,
-        'precision': precision.to_dict(),
-        'recall': recall.to_dict(),
-        'F1': f1.to_dict()
+            'accuracy': accuracy,
+            'precision': precision.to_dict(),
+            'recall': recall.to_dict(),
+            'F1': f1.to_dict()
         }
 
     def test(self, X, y, display=False):
@@ -199,9 +199,6 @@ class DecisionTree:
         result.update(self._measures(result['confusion-matrix']))
         if display:
             print(result)
-            # TODO: Remove this
-            #print("sklearn implementation:", classification_report(y, preds, target_names=result['confusion-matrix'].columns.values))
-            #print("sklearn implementation:", confusion_matrix(y, preds))
 
         return result
 

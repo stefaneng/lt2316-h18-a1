@@ -15,6 +15,7 @@ class Node:
         self.children[value] = node
 
     def __str__(self):
+        "Pretty print the tree so it is easier to read"
         cont = "(Continuous)" if self.continuous_child else ""
 
         if not self.split_value:

@@ -12,6 +12,7 @@ def binary_split_cont(X, attr, target_attr):
     """Takes a data frame `X`, with a continuous attribute `attr`
     Creates a binary split in the data by calculating the information gain
     when splitting the data between each point
+    Reference: http://web.cs.iastate.edu/~honavar/fayyad.pdf
     """
     sorted_df = X.sort_values(by=[attr])
     max_gain = -np.inf
